@@ -26,7 +26,7 @@ connect = ->
         console.log 'msg', msg.data
         data = JSON.parse(msg.data)
 
-        set('release', data.os) if data.os
+        set('release', data.release) if data.release
 
         set('uptime', fmt_time(data.uptime)) if data.uptime
 

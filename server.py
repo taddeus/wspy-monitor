@@ -43,7 +43,7 @@ def stats():
 
     # Memory usage
     with open('/proc/meminfo', 'r') as f:
-        for line in f.readlines():
+        for line in f:
             if line.startswith('MemTotal'):
                 assert line.endswith('kB\n')
                 total = int(line.split()[1])
@@ -61,6 +61,7 @@ def stats():
             used, avail = map(int, parts[2:4])
             yield 'disk', (used, used + avail)
             break
+
 
 if __name__ == '__main__':
     server = websocket(extensions=[WebkitDeflateFrame()])
@@ -83,7 +84,6 @@ if __name__ == '__main__':
         while True:
             if not clients:
                 time.sleep(6)
-                #time.sleep(.1)
                 continue
 
             status = Frame(OPCODE_TEXT, json.dumps(dict(stats())))
