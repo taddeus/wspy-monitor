@@ -6,7 +6,7 @@ make
 
 while true; do
     inotifywait --quiet --exclude \.swp\$ --event moved_to,attrib,modify \
-        . *.sass *.coffee
+        *.coffee
     sleep 0.05s
     make
 done

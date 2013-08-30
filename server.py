@@ -2,37 +2,68 @@
 import time
 import socket
 import json
-import subprocess
 import re
+from subprocess import check_output
 from threading import Thread
-from twspy import websocket, TextMessage
+from twspy import websocket, Frame, OPCODE_TEXT, WebkitDeflateFrame
 
 
-def status_message():
+def stats():
+    # Release
+    dist, codename = check_output(['lsb_release', '-sdc']).rstrip().split('\n')
+    yield 'release', '%s (%s)' % (dist, codename)
+
+    # Uptime
     with open('/proc/uptime', 'r') as f:
         uptime, idletime = map(float, f.read().split(' '))
+        yield 'uptime', uptime
 
-    temps = []
+    # CPU temperature
+    try:
+        temps = []
 
-    for line in subprocess.check_output('sensors').split('\n'):
-        m = re.match(r'^Core \d+:\s*\+(\d+\.\d+)', line)
+        for line in check_output('sensors').split('\n'):
+            m = re.match(r'^Core \d+:\s*\+(\d+\.\d+)', line)
 
-        if m:
-            temps.append(float(m.group(1)))
+            if m:
+                temps.append(float(m.group(1)))
 
-    cpu_idle = float(subprocess.check_output('mpstat').rsplit(' ', 1)[-1])
+        yield 'temps', temps
+    except:
+        pass
 
-    data = {
-        'uptime': uptime,
-        'temps': temps,
-        'cpu_usage': max(round(100 - cpu_idle, 2), 0)
-    }
+    # CPU usage
+    with open('/proc/stat', 'r') as f:
+        line = f.readlines()[0].rstrip().split()
+        assert line[0] == 'cpu'
+        numbers = map(int, line[1:])
+        total = sum(numbers)
+        idle = numbers[3]
+        yield 'cpu_usage', round(float(total - idle) / total * 100, 2)
 
-    return TextMessage(json.dumps(data))
+    # Memory usage
+    with open('/proc/meminfo', 'r') as f:
+        for line in f.readlines():
+            if line.startswith('MemTotal'):
+                assert line.endswith('kB\n')
+                total = int(line.split()[1])
+            elif line.startswith('MemFree'):
+                assert line.endswith('kB\n')
+                used = total - int(line.split()[1])
+                yield 'memory', (used, total)
+                break
 
+    # Disk usage
+    for line in check_output('df').split('\n'):
+        parts = line.split()
+
+        if parts[0].startswith('/dev/') and parts[5] == '/':
+            used, avail = map(int, parts[2:4])
+            yield 'disk', (used, used + avail)
+            break
 
 if __name__ == '__main__':
-    server = websocket()
+    server = websocket(extensions=[WebkitDeflateFrame()])
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(('', 12345))
     server.listen(5)
@@ -50,17 +81,19 @@ if __name__ == '__main__':
 
     try:
         while True:
-            if len(clients):
-                status = status_message()
+            if not clients:
+                time.sleep(6)
+                #time.sleep(.1)
+                continue
 
-                for client in list(clients):
-                    try:
-                        client.send(status.frame())
-                    except socket.error:
-                        print 'Client disconnected'
-                        clients.remove(client)
-            else:
-                time.sleep(5)
+            status = Frame(OPCODE_TEXT, json.dumps(dict(stats())))
+
+            for client in list(clients):
+                try:
+                    client.send(status)
+                except socket.error:
+                    print 'Client disconnected'
+                    clients.remove(client)
 
             time.sleep(1)
     except KeyboardInterrupt:

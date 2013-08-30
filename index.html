@@ -3,8 +3,37 @@
     <head>
         <title>PcTaddeus monitor</title>
         <link href="style.css" type="text/css" rel="stylesheet">
+        <link href="font-awesome.min.css" type="text/css" rel="stylesheet">
     </head>
     <body>
+        <div class="header">
+            <div class="center">
+                <i class="icon-gear"></i><span id="release">-</span>
+                <span id="status" class="right"></span>
+            </div>
+        </div>
+        <div id="content" class="center">
+            <div>
+                <i class="icon-time"></i>Uptime:
+                    <span id="uptime" class="right">-</span>
+            </div>
+            <div>
+                <i class="icon-fire"></i>CPU Core temperatures:
+                    <span id="temp" class="right">-</span>
+            </div>
+            <div>
+                <i class="icon-dashboard"></i>CPU usage:
+                    <span id="cpu-usage" class="right">-</span>
+            </div>
+            <div>
+                <i class="icon-tasks"></i>Memory usage:
+                    <span id="memory" class="right">-</span>
+            </div>
+            <div>
+                <i class="icon-hdd"></i>Disk usage:
+                    <span id="disk" class="right">-</span>
+            </div>
+        </div>
         <script src="scripts.js" type="text/javascript"></script>
     </body>
 </html>

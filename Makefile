@@ -1,11 +1,8 @@
-ALL := style.css scripts.js
+ALL := scripts.js
 
 .PHONY: all
 
 all: $(ALL)
-
-%.css: %.sass
-	sass --no-cache $< | yui-compressor --type css --output $@
 
 %.js: %.coffee
 	coffee --compile --output $(@D) $<
