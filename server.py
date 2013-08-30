@@ -3,20 +3,27 @@ import time
 import socket
 import json
 import re
+import psutil
+import platform
 from subprocess import check_output
 from threading import Thread
 from twspy import websocket, Frame, OPCODE_TEXT, WebkitDeflateFrame
 
 
+def osname():
+    if platform.system() == 'Linux':
+        return 'Linux %s %s (%s)' % platform.dist()
+
+    #return '%s %s' % (platform.system(), platform.release())
+    return platform.platform()
+
+
 def stats():
-    # Release
-    dist, codename = check_output(['lsb_release', '-sdc']).rstrip().split('\n')
-    yield 'release', '%s (%s)' % (dist, codename)
+    # OS identification
+    yield 'osname', osname()
 
     # Uptime
-    with open('/proc/uptime', 'r') as f:
-        uptime, idletime = map(float, f.read().split(' '))
-        yield 'uptime', uptime
+    yield 'uptime', time.time() - psutil.get_boot_time()
 
     # CPU temperature
     try:
@@ -28,39 +35,23 @@ def stats():
             if m:
                 temps.append(float(m.group(1)))
 
+        assert len(temps) == psutil.NUM_CPUS
         yield 'temps', temps
     except:
         pass
 
     # CPU usage
-    with open('/proc/stat', 'r') as f:
-        line = f.readlines()[0].rstrip().split()
-        assert line[0] == 'cpu'
-        numbers = map(int, line[1:])
-        total = sum(numbers)
-        idle = numbers[3]
-        yield 'cpu_usage', round(float(total - idle) / total * 100, 2)
+    cpu = psutil.cpu_times()
+    total = sum(cpu)
+    yield 'cpu_usage', round(float(total - cpu.idle) / total * 100, 2)
 
     # Memory usage
-    with open('/proc/meminfo', 'r') as f:
-        for line in f:
-            if line.startswith('MemTotal'):
-                assert line.endswith('kB\n')
-                total = int(line.split()[1])
-            elif line.startswith('MemFree'):
-                assert line.endswith('kB\n')
-                used = total - int(line.split()[1])
-                yield 'memory', (used, total)
-                break
+    mem = psutil.phymem_usage()
+    yield 'memory', (mem.used, mem.total)
 
     # Disk usage
-    for line in check_output('df').split('\n'):
-        parts = line.split()
-
-        if parts[0].startswith('/dev/') and parts[5] == '/':
-            used, avail = map(int, parts[2:4])
-            yield 'disk', (used, used + avail)
-            break
+    disk = psutil.disk_usage('/')
+    yield 'disk', (disk.used, disk.total)
 
 
 if __name__ == '__main__':

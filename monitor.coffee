@@ -1,7 +1,7 @@
 el = (id) -> document.getElementById(id)
 set = (id, value) -> el(id).innerHTML = value
 values = (e for e in el('content').getElementsByTagName('span')) \
-         .concat(el('release'))
+         .concat(el('osname'))
 
 connect = ->
     val.innerHTML = 'Connecting...' for val in values
@@ -26,19 +26,17 @@ connect = ->
         console.log 'msg', msg.data
         data = JSON.parse(msg.data)
 
-        set('release', data.release) if data.release
-
+        set('osname', data.osname) if data.osname
         set('uptime', fmt_time(data.uptime)) if data.uptime
+        set('cpu-usage', "#{data.cpu_usage}%")
+        set('memory', fmt_kbytes_usage(data.memory))
+        set('disk', fmt_kbytes_usage(data.disk))
 
-        if data.temps.length
+        if data.temps
             el('temp').innerHTML = ("#{deg}&#8451;" for deg in data.temps) \
                                    .join('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')
-
-        set('cpu-usage', "#{data.cpu_usage}%") if data.cpu_usage
-
-        set('memory', fmt_kbytes_usage(data.memory)) if data.memory
-
-        set('disk', fmt_kbytes_usage(data.disk)) if data.disk
+        else
+            set('temp', '-')
 
 fmt_time = (total) ->
     total = Math.round total
@@ -58,8 +56,8 @@ fmt_time = (total) ->
     str
 
 fmt_kbytes_usage = ([used, total]) ->
-    used = Math.round used / 1000
-    total = Math.round total / 1000
+    used = Math.round used / 1e6
+    total = Math.round total / 1e6
     perc = Math.round used / total * 100
     return "#{used}MB / #{total}MB (#{perc}%)"
 
