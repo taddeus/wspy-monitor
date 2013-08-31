@@ -5,7 +5,7 @@ values = (e for e in el('content').getElementsByTagName('span')) \
 
 connect = ->
     val.innerHTML = 'Connecting...' for val in values
-    ws = new WebSocket 'ws://localhost:12345'
+    ws = new WebSocket 'ws://kompiler.org:8100'
 
     ws.onopen = ->
         console.log 'open'
