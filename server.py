@@ -12,7 +12,7 @@ from wspy import websocket, Frame, OPCODE_TEXT, WebkitDeflateFrame
 
 def osname():
     if platform.system() == 'Linux':
-        distro, version, codename % platform.dist()
+        distro, version, codename = platform.dist()
         name = 'Linux - %s %s' % (distro, version)
 
         if codename:
