@@ -7,7 +7,7 @@ import psutil
 import platform
 from subprocess import check_output
 from threading import Thread
-from twspy import websocket, Frame, OPCODE_TEXT, WebkitDeflateFrame
+from wspy import websocket, Frame, OPCODE_TEXT, WebkitDeflateFrame
 
 
 def osname():
