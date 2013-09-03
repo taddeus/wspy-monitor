@@ -61,27 +61,13 @@ def stats():
 
 
 if __name__ == '__main__':
-    server = websocket(extensions=[WebkitDeflateFrame()])
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server.bind(('', 8100))
-    server.listen(5)
     clients = []
 
-    def connect():
-        while True:
-            sock, address = server.accept()
-            print 'Client connected at %s:%d' % address
-            clients.append(sock)
-
-    t = Thread(target=connect)
-    t.daemon = True
-    t.start()
-
-    try:
+    def update():
         while True:
             if not clients:
-                time.sleep(6)
-                continue
+                print 'stop thread'
+                break
 
             status = Frame(OPCODE_TEXT, json.dumps(dict(stats())))
 
@@ -93,6 +79,26 @@ if __name__ == '__main__':
                     clients.remove(client)
 
             time.sleep(1)
+
+    server = websocket(extensions=[WebkitDeflateFrame()])
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind(('', 8100))
+    server.listen(5)
+
+    t = Thread(target=update)
+    t.daemon = True
+
+    try:
+        while True:
+            sock, address = server.accept()
+            print 'Client connected at %s:%d' % address
+            clients.append(sock)
+
+            if not t.is_alive():
+                print 'start thread'
+                t = Thread(target=update)
+                t.daemon = True
+                t.start()
     except KeyboardInterrupt:
         print 'Stopping server'
         server.close()
