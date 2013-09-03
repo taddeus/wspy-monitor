@@ -66,7 +66,6 @@ if __name__ == '__main__':
     def update():
         while True:
             if not clients:
-                print 'stop thread'
                 break
 
             status = Frame(OPCODE_TEXT, json.dumps(dict(stats())))
@@ -95,7 +94,6 @@ if __name__ == '__main__':
             clients.append(sock)
 
             if not t.is_alive():
-                print 'start thread'
                 t = Thread(target=update)
                 t.daemon = True
                 t.start()
