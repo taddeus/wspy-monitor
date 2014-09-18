@@ -90,6 +90,8 @@ if __name__ == '__main__':
         while True:
             try:
                 sock, address = server.accept()
+            except KeyboardInterrupt:
+                raise
             except:
                 continue
 
