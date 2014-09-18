@@ -47,9 +47,7 @@ def stats():
         pass
 
     # CPU usage
-    cpu = psutil.cpu_times()
-    total = sum(cpu)
-    yield 'cpu_usage', round(float(total - cpu.idle) / total * 100, 2)
+    yield 'cpu_usage', round(psutil.cpu_percent(), 2)
 
     # Memory usage
     mem = psutil.phymem_usage()
@@ -79,7 +77,8 @@ if __name__ == '__main__':
 
             time.sleep(1)
 
-    server = websocket(extensions=[WebkitDeflateFrame()])
+    #server = websocket(extensions=[WebkitDeflateFrame()])
+    server = websocket()
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(('', 8100))
     server.listen(5)
@@ -89,7 +88,11 @@ if __name__ == '__main__':
 
     try:
         while True:
-            sock, address = server.accept()
+            try:
+                sock, address = server.accept()
+            except:
+                continue
+
             print 'Client connected at %s:%d' % address
             clients.append(sock)
 
