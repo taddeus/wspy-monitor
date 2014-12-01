@@ -5,9 +5,10 @@ import json
 import re
 import psutil
 import platform
+import sys
 from subprocess import check_output
 from threading import Thread
-from wspy import websocket, Frame, OPCODE_TEXT, WebkitDeflateFrame
+from wspy import websocket, Frame, OPCODE_TEXT
 
 
 def osname():
@@ -20,7 +21,6 @@ def osname():
 
         return name
 
-    #return '%s %s' % (platform.system(), platform.release())
     return platform.platform()
 
 
@@ -72,12 +72,11 @@ if __name__ == '__main__':
                 try:
                     client.send(status)
                 except socket.error:
-                    print 'Client disconnected'
+                    print >>sys.stderr, 'Client disconnected'
                     clients.remove(client)
 
             time.sleep(1)
 
-    #server = websocket(extensions=[WebkitDeflateFrame()])
     server = websocket()
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(('', 8100))
@@ -90,12 +89,10 @@ if __name__ == '__main__':
         while True:
             try:
                 sock, address = server.accept()
-            except KeyboardInterrupt:
-                raise
-            except:
+            except socket.error:
                 continue
 
-            print 'Client connected at %s:%d' % address
+            print >>sys.stderr, 'Client connected at %s:%d' % address
             clients.append(sock)
 
             if not t.is_alive():
@@ -103,5 +100,6 @@ if __name__ == '__main__':
                 t.daemon = True
                 t.start()
     except KeyboardInterrupt:
-        print 'Stopping server'
+        print >>sys.stderr, 'Stopping server'
+    finally:
         server.close()
